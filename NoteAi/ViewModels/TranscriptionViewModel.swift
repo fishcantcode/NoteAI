@@ -97,10 +97,13 @@ class TranscriptionViewModel: ObservableObject {
      
     
     private func startRecordingTimer() {
-        recordingTime = 0.0
-        recordingTimer?.invalidate()
+        stopRecordingTimer()
+        let startTime = recordingTime
+        let startDate = Date()
         recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.recordingTime += 0.1
+            guard let self = self else { return }
+            let elapsed = Date().timeIntervalSince(startDate)
+            self.recordingTime = startTime + elapsed
         }
     }
     private func stopRecordingTimer() {
@@ -207,7 +210,7 @@ class TranscriptionViewModel: ObservableObject {
     
     func stopLiveTranscription() {
         speechRecognitionService.stopLiveTranscription()
-        self.finalRecordingDuration = self.recordingTime
+        finalRecordingDuration = recordingTime
         
         stopRecordingTimer()
         stopAudioLevelMonitoring()
@@ -264,14 +267,14 @@ class TranscriptionViewModel: ObservableObject {
             audioLevelObserver = nil
         }
     }
-    
-     
     func clearTranscription() {
         transcriptionText = ""
         currentStreamingText = ""
         editableText = ""
         summary = ""
         segments = []
+        recordingTime = 0
+        finalRecordingDuration = 0
         errorMessage = nil
     }
     func getCurrentTranscriptionText() -> String {
