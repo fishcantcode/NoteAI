@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ConnectionSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var apiManager = APIManager.shared
 
      
@@ -61,11 +62,12 @@ struct ConnectionSettingsView: View {
             }
             .navigationTitle("API Settings")
             .toolbar {
-                 ToolbarItem(placement: .navigationBarTrailing) {
-                     Button("Done") {           
-                     }
-                 }
-             }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
         .onAppear {
              
