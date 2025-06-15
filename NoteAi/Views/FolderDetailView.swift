@@ -3,24 +3,18 @@ import UniformTypeIdentifiers
 
 struct FolderDetailView: View {
     @StateObject var viewModel: FolderDetailViewModel
-     
-     
-     
+    @Environment(\.presentationMode) var presentationMode
     
-    @State private var showingDocumentPicker = false  
+    
     @State private var showingNewTextDocumentSheet = false
     @State private var newDocumentName: String = ""
     @State private var newDocumentContent: String = ""
     @State private var triggerFileImporter: Bool = false  
-    
-     
     @State private var selectedLocalSummary: Document?
     @State private var localSummaryContent: String = ""
     
-     
     init(dataset: KnowledgeDataset, apiManager: APIManager) {
         _viewModel = StateObject(wrappedValue: FolderDetailViewModel(dataset: dataset, apiManager: apiManager))
-         
     }
     
     private let columns = [
@@ -29,6 +23,7 @@ struct FolderDetailView: View {
     
     var body: some View {
         ScrollView {
+            
             VStack(alignment: .leading) {
                 Text(viewModel.dataset.name)  
                     .font(.largeTitle.bold())
@@ -40,22 +35,49 @@ struct FolderDetailView: View {
                     .padding(.bottom)
                 
                  
-                HStack(spacing: 20) {
-                    ActionButton(title: "Add File", systemImage: "doc.badge.plus", color: .blue) {
-                        showingDocumentPicker = true
+                HStack(spacing: 16) {
+                    Button(action: {
+                        triggerFileImporter = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "doc.badge.plus")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("Add File")
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 3)
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .fileImporter(
+                        isPresented: $triggerFileImporter,
+                        allowedContentTypes: [.pdf, .plainText, .item, .utf8PlainText, .text, UTType.data],
+                        allowsMultipleSelection: false
+                    ) { result in
+                        switch result {
+                        case .success(let urls):
+                            guard let url = urls.first else { return }
+                            viewModel.uploadFile(fileURL: url)
+                        case .failure(let error):
+                            print("Error selecting file: \(error.localizedDescription)")
+                        }
+                    }
+                    
                     NavigationLink(destination: TranscriptionView()) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: "waveform.and.mic")
+                                .font(.system(size: 18, weight: .semibold))
                             Text("Record & Summarize")
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: 50, maxHeight: 50)
                         .background(Color.purple)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                         .shadow(radius: 3)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.bottom)
                 
@@ -75,7 +97,14 @@ struct FolderDetailView: View {
                         .foregroundColor(.secondary)
                         .padding()
                 } else {
-                    Section(header: Text("Knowledge Base Documents").font(.title2).padding(.top)) {
+                    Section(header: 
+                        Text("KNOWLEDGE BASE DOCUMENTS")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 24)
+                            .padding(.bottom, 8)
+                    ) {
                         LazyVGrid(columns: columns, spacing: 20) {
                             ForEach(viewModel.documents) { document in
                                 DocumentCardView(document: document)  
@@ -99,6 +128,19 @@ struct FolderDetailView: View {
         }
         .navigationTitle(viewModel.dataset.name)  
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Refresh") {
@@ -146,63 +188,6 @@ struct FolderDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingDocumentPicker) {
-             
-            VStack {
-                Text("Upload Document").font(.headline).padding()
-                
-                if viewModel.isUploadingFile {
-                    ProgressView("Uploading file...")
-                        .padding()
-                } else {
-                    Button("Select File") {
-                        triggerFileImporter = true
-                    }
-                    .padding()
-                    .fileImporter(
-                        isPresented: $triggerFileImporter,
-                        allowedContentTypes: [.pdf, .plainText, .item, .utf8PlainText, .text, UTType.data],  
-                        allowsMultipleSelection: false
-                    ) { result in
-                        switch result {
-                        case .success(let urls):
-                            guard let selectedFileURL = urls.first else {
-                                viewModel.uploadErrorMessage = "No file selected or URL could not be accessed."
-                                return
-                            }
-                             
-                             
-                             
-                            print("File selected: \(selectedFileURL)")
-                            viewModel.uploadFile(fileURL: selectedFileURL)
-                        case .failure(let error):
-                            viewModel.uploadErrorMessage = "Failed to select file: \(error.localizedDescription)"
-                            print("Error selecting file: \(error.localizedDescription)")
-                        }
-                    }
-                }
-                
-                if let uploadError = viewModel.uploadErrorMessage {
-                    Text(uploadError)
-                        .foregroundColor(.red)
-                        .padding()
-                }
-                
-                 
-                Spacer()
-                
-                Button("Done") {  
-                    showingDocumentPicker = false
-                    viewModel.uploadErrorMessage = nil  
-                }.padding()
-            }
-            .frame(minWidth: 300, idealHeight: 250)
-            .onDisappear {
-                 
-                 
-                viewModel.uploadErrorMessage = nil
-            }
-        }
         .sheet(isPresented: $showingNewTextDocumentSheet) {
             VStack {
                 Text("Create Text Document").font(.headline).padding()
@@ -234,7 +219,14 @@ struct FolderDetailView: View {
     @ViewBuilder
     private var localSummariesSection: some View {
         if !viewModel.summaryFiles.isEmpty {
-            Section(header: Text("Saved Summaries").font(.title2).padding(.top)) {
+            Section(header: 
+                Text("SAVED SUMMARIES")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+            ) {
                 ForEach(Array(viewModel.summaryFiles)) { (summaryDocument: Document) in  
                     SummaryRowView(summaryDocument: summaryDocument, viewModel: viewModel) {
                         self.selectedLocalSummary = summaryDocument
@@ -249,7 +241,14 @@ struct FolderDetailView: View {
                 }
             }
         } else {
-            Section(header: Text("Saved Summaries").font(.title2).padding(.top)) {
+            Section(header: 
+                Text("SAVED SUMMARIES")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+            ) {
                 Text("No saved summaries found.")
                     .foregroundColor(.secondary)
                     .padding()

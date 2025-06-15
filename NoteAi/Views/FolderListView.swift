@@ -59,8 +59,11 @@ struct FolderListView: View {
                     }
                 }
             }
-            .navigationTitle("Knowledge Bases")  
+            .navigationTitle("Knowledge Bases")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Text("Back").hidden()
+                }
                 ToolbarItem(placement: .navigationBarLeading) {
                     ConnectionStatusIndicator()
                 }
