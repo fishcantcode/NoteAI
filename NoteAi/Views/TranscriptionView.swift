@@ -20,18 +20,28 @@ struct TranscriptionView: View {
                 VStack(alignment: .leading, spacing: 16) {
                      
                     HStack {
-                        Circle()
-                            .fill(viewModel.isRecording ? Color.red : Color.gray)
-                            .frame(width: 12, height: 12)
-                        
-                        Text(viewModel.isRecording ? "Recording..." : "Not recording")
-                            .font(.caption)
-                            .foregroundColor(viewModel.isRecording ? .red : .gray)
+                        if viewModel.isRecording {
+                            Text(formattedTime(viewModel.recordingTime))
+                                .font(.caption.monospacedDigit())
+                                .foregroundColor(.red)
+                                .frame(width: 80, alignment: .leading)
+                        }
                         
                         Spacer()
                         
-                        if !viewModel.isRecording && !viewModel.transcriptionText.isEmpty {
-                            Text("Duration: \(formattedTime(viewModel.segments.last?.timestamp ?? 0))")
+                        if viewModel.isRecording {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .opacity(viewModel.audioLevel > 0.1 ? 1 : 0.5)
+                                .scaleEffect(viewModel.audioLevel > 0.1 ? 1.2 : 1.0)
+                                .animation(.easeInOut(duration: 0.15), value: viewModel.audioLevel)
+                            
+                            Text("Recording...")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        } else if !viewModel.transcriptionText.isEmpty {
+                            Text("Duration: \(formattedTime(viewModel.finalRecordingDuration))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -54,16 +64,12 @@ struct TranscriptionView: View {
                                 
                                  
                                 if viewModel.isRecording {
-                                    HStack(spacing: 0) {
-                                        Text(viewModel.currentStreamingText.isEmpty ? "Listening..." : viewModel.currentStreamingText)
-                                            .foregroundColor(viewModel.currentStreamingText.isEmpty ? .secondary : .primary)
-                                        
-                                         
-                                        if !viewModel.currentStreamingText.isEmpty {
-                                            Text("_")
-                                                .opacity(Date().timeIntervalSince1970.truncatingRemainder(dividingBy: 1.0) > 0.5 ? 1 : 0)
-                                                .animation(.easeInOut(duration: 0.5), value: Date().timeIntervalSince1970.truncatingRemainder(dividingBy: 1.0) > 0.5)
-                                        }
+                                    if viewModel.isDetectingSpeech {
+                                        Text("Waiting...")
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        Text("Listening...")
+                                            .foregroundColor(.secondary)
                                     }
                                 }
                             }
@@ -91,16 +97,10 @@ struct TranscriptionView: View {
                     viewModel.startLiveTranscription()
                 }
             }) {
-                VStack {
-                    Image(systemName: viewModel.isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(viewModel.isRecording ? .red : .blue)
-                    
-                    Text(viewModel.isRecording ? "Stop Recording" : "Start Recording")
-                        .font(.callout)
-                        .padding(.top, 8)
-                }
+                Image(systemName: viewModel.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .foregroundColor(viewModel.isRecording ? .red : .blue)
             }
             .padding(.bottom, 30)
             
@@ -298,11 +298,15 @@ struct TranscriptionView: View {
         }
     }
     
-    private func formattedTime(_ seconds: Double) -> String {
-        let minutes = Int(seconds) / 60
-        let seconds = Int(seconds) % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+    private func formattedTime(_ timeInterval: TimeInterval) -> String {
+        let totalSeconds = Int(timeInterval)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        let milliseconds = Int((timeInterval.truncatingRemainder(dividingBy: 1)) * 100)
+        return String(format: "%d:%02d.%02d", minutes, seconds, milliseconds)
     }
+    
+
     
      
     struct TranscriptionError: Identifiable {

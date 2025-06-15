@@ -7,6 +7,9 @@ import Speech
 class TranscriptionViewModel: ObservableObject {
      
     @Published var isRecording = false
+    @Published var recordingTime: TimeInterval = 0.0
+    @Published var finalRecordingDuration: TimeInterval = 0.0
+    @Published var isDetectingSpeech = false
     @Published var transcriptionText = ""
     @Published var currentStreamingText = ""  
     @Published var editableText = ""  
@@ -27,6 +30,7 @@ class TranscriptionViewModel: ObservableObject {
     private let speechRecognitionService = SpeechRecognitionService()
     private var audioLevelTimer: Timer?
     private var audioLevelObserver: NSObjectProtocol?
+    private var recordingTimer: Timer?
     private let documentManager = DocumentManager.shared  
     
     init() {
@@ -100,7 +104,6 @@ class TranscriptionViewModel: ObservableObject {
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             print("[VIEWMODEL] Audio session setup successful")
             
-             
             print("[VIEWMODEL] Current route: \(audioSession.currentRoute)")
             print("[VIEWMODEL] Input available: \(audioSession.isInputAvailable)")
             if let inputs = audioSession.availableInputs {
@@ -114,178 +117,154 @@ class TranscriptionViewModel: ObservableObject {
     
      
     
+    private func startRecordingTimer() {
+        recordingTime = 0.0
+        recordingTimer?.invalidate()
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.recordingTime += 0.1
+        }
+    }
+    
+    private func stopRecordingTimer() {
+        recordingTimer?.invalidate()
+        recordingTimer = nil
+    }
+    
     func startLiveTranscription() {
         print("[VIEWMODEL] startLiveTranscription called")
         
-         
         errorMessage = nil
-        segments = []
-        transcriptionText = ""
+        segments.removeAll() 
+        transcriptionText = "Starting transcription..."
+        currentStreamingText = "" 
         isProcessing = true
+        isDetectingSpeech = true
+        isRecording = true
+        startRecordingTimer()
         
-         
         if !microphonePermissionGranted {
             print("[VIEWMODEL] ERROR: Microphone permission not granted")
             errorMessage = "Microphone permission is required. Please grant access in Settings."
-            isProcessing = false
+            isProcessing = false; isRecording = false; isDetectingSpeech = false; stopRecordingTimer()
             return
         }
         
         if !speechRecognitionAuthorized {
             print("[VIEWMODEL] ERROR: Speech recognition not authorized")
             errorMessage = "Speech recognition permission is required."
-            isProcessing = false
+            isProcessing = false; isRecording = false; isDetectingSpeech = false; stopRecordingTimer()
             return
         }
         
-         
         do {
             let audioSession = AVAudioSession.sharedInstance()
             if !audioSession.isInputAvailable {
                 print("[VIEWMODEL] ERROR: No audio input available")
                 errorMessage = "No microphone available. Please check your device."
-                isProcessing = false
+                isProcessing = false; isRecording = false; isDetectingSpeech = false; stopRecordingTimer()
                 return
             }
             
-             
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             print("[VIEWMODEL] Audio session reactivated successfully")
         } catch {
             print("[VIEWMODEL] ERROR: Failed to setup audio session: \(error)")
             errorMessage = "Audio setup failed: \(error.localizedDescription)"
-            isProcessing = false
+            isProcessing = false; isRecording = false; isDetectingSpeech = false; stopRecordingTimer()
             return
         }
         
-         
         print("[VIEWMODEL] Starting live transcription with service")
         
-         
-        let enhancedCallback: (TranscriptionSegment) -> Void = { [weak self] segment in
-            guard let self = self else { return }
+        let enhancedCallback: (TranscriptionSegment) -> Void = { [weak self] segmentData in
+            guard let self = self, self.isRecording else { return }
             
             DispatchQueue.main.async {
-                if !self.isRecording {
-                     
-                    self.isProcessing = false
-                    self.isRecording = true
-                    
-                     
-                    self.currentStreamingText = ""
+                if self.isDetectingSpeech && !segmentData.text.isEmpty {
+                    self.isDetectingSpeech = false
+                    self.transcriptionText = "" 
                 }
-                
-                 
-                self.currentStreamingText = segment.text
-                
-                 
-                if self.segments.isEmpty {
-                    print("[VIEWMODEL] Adding new segment")
-                    self.segments.append(segment)
-                } else if let index = self.segments.firstIndex(where: { $0.id == segment.id }) {
-                    print("[VIEWMODEL] Updating existing segment at index \(index)")
-                    self.segments[index] = segment
-                } else {
-                    print("[VIEWMODEL] Adding new segment")
-                    self.segments.append(segment)
-                }
-                
-                 
-                if segment.isFinal {
-                     
-                    if !self.transcriptionText.isEmpty {
-                        self.transcriptionText += " " + segment.text
-                    } else {
-                        self.transcriptionText = segment.text
+
+                if segmentData.isFinal {
+                    if !segmentData.text.isEmpty {
+                        let finalSegment = TranscriptionSegment(text: segmentData.text, timestamp: segmentData.timestamp, isFinal: true)
+                        self.segments.append(finalSegment)
+                        print("[VIEWMODEL] Final segment added: '\(finalSegment.text)'")
                     }
-                    
-                     
                     self.currentStreamingText = ""
-                    print("[VIEWMODEL] Final segment added: '\(segment.text)'")
                 } else {
-                     
-                    print("[VIEWMODEL] Interim result: '\(segment.text.prefix(30))...'")
+                    self.currentStreamingText = segmentData.text
+                    print("[VIEWMODEL] Interim result: '\(segmentData.text.prefix(30))...'")
+                }
+
+                let committedText = self.segments.map { $0.text }.joined(separator: " ")
+                if self.currentStreamingText.isEmpty {
+                    self.transcriptionText = committedText
+                } else {
+                    self.transcriptionText = committedText.isEmpty ? self.currentStreamingText : committedText + " " + self.currentStreamingText
                 }
             }
         }
         
-         
         let enhancedErrorCallback: (Error) -> Void = { [weak self] error in
             guard let self = self else { return }
             
-             
             let errorDescription = error.localizedDescription.lowercased()
             let isCancellationError = errorDescription.contains("cancel") || 
                                      (error as NSError).domain == "kLSRErrorDomain" && (error as NSError).code == 301
             
             if isCancellationError {
                 print("[VIEWMODEL] Normal recording stop detected: \(error)")
-                 
                 return
             }
             
-             
             print("[VIEWMODEL] ERROR in speech recognition: \(error)")
             
             DispatchQueue.main.async {
                 self.errorMessage = "Recording error: \(error.localizedDescription)"
+                self.isRecording = false
+                self.isDetectingSpeech = false
+                self.isProcessing = false
+                self.stopRecordingTimer()
+                self.stopAudioLevelMonitoring()
             }
         }
         
-         
         speechRecognitionService.startLiveTranscription(
             callback: enhancedCallback,
             errorCallback: enhancedErrorCallback
         )
         
-         
         startAudioLevelMonitoring()
     }
     
     func stopLiveTranscription() {
         print("[VIEWMODEL] stopLiveTranscription called")
-        stopRecording()
+        speechRecognitionService.stopLiveTranscription()
+        
+        self.finalRecordingDuration = self.recordingTime
+        stopRecordingTimer()
+        isRecording = false
+        isDetectingSpeech = false
+        isProcessing = false
+        stopAudioLevelMonitoring()
+        
+        if !currentStreamingText.isEmpty {
+            let trimmedStreamingText = currentStreamingText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedStreamingText.isEmpty {
+                let lastStreamingSegment = TranscriptionSegment(text: trimmedStreamingText, timestamp: recordingTime, isFinal: true)
+                self.segments.append(lastStreamingSegment)
+                let committedText = self.segments.map { $0.text }.joined(separator: " ")
+                self.transcriptionText = committedText
+                print("[VIEWMODEL] Finalized streaming text on stop: '\(trimmedStreamingText)'")
+            }
+            currentStreamingText = ""
+        }
+        print("[VIEWMODEL] Transcription completed. Final text: \(transcriptionText)")
     }
     
     private func stopRecording() {
-         
-        if !isRecording && !isProcessing {
-            print("[VIEWMODEL] Warning: stopRecording called but not recording")
-            return
-        }
-        
-        print("[VIEWMODEL] Stopping speech recognition")
-        
-         
-        if !currentStreamingText.isEmpty {
-            print("[VIEWMODEL] Preserving current streaming text: \(currentStreamingText)")
-            
-             
-            if !transcriptionText.isEmpty {
-                transcriptionText += " " + currentStreamingText
-            } else {
-                transcriptionText = currentStreamingText
-            }
-            
-             
-            currentStreamingText = ""
-        }
-        
-         
-        speechRecognitionService.stopLiveTranscription()
-        
-         
-        isRecording = false
-        isProcessing = false
-        
-         
-        stopAudioLevelMonitoring()
-        
-         
-        print("[VIEWMODEL] Transcription completed")
-        print("[VIEWMODEL] Total segments: \(segments.count)")
-        print("[VIEWMODEL] Final segments: \(segments.filter { $0.isFinal }.count)")
-        print("[VIEWMODEL] Final text: \(transcriptionText)")
+        print("[VIEWMODEL] stopRecording() is now largely handled by stopLiveTranscription(). Ensure all state is reset there.")
     }
     
      
@@ -364,25 +343,25 @@ class TranscriptionViewModel: ObservableObject {
             errorMessage = "No text to summarize. Please record or enter some text first."
             return
         }
-        
+
         print("[VIEWMODEL] Using Dify Chat API Key: \(ConfigManager.shared.difyChatAPIKey)")
         print("[VIEWMODEL] Using Dify Knowledge ID: \(ConfigManager.shared.difyKnowledgeID)")
-        
+
         let difyService = DifyAPIService(
             apiKey: ConfigManager.shared.difyChatAPIKey,
             appID: ConfigManager.shared.difyKnowledgeID
         )
-        
+
         isSummarizing = true
-        errorMessage = nil
-        
+        errorMessage = nil 
+
         print("[VIEWMODEL] Sending text for summarization...")
-        
+
         difyService.sendMessageForSummary(text: editableText) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isSummarizing = false
-                
+
                 switch result {
                 case .success(let summary):
                     print("[VIEWMODEL] Received summary from Dify")
