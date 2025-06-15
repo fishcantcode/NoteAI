@@ -72,6 +72,11 @@ struct FolderListView: View {
                             .font(.title2)  
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: ConversationListView()) {
+                        Image(systemName: "message.fill")
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {  
                     Button {
                         showingConnectionSettings = true

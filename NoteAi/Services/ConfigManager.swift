@@ -29,7 +29,7 @@ class ConfigManager {
         get {
             userDefaults.string(forKey: UserDefaultsKeys.baseURL) ?? 
             plistValue(forKey: PlistKeys.baseURL) ?? 
-            "http://192.168.0.239/v1"  
+            "http://192.168.0.218/v1"  
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.baseURL)
@@ -41,7 +41,7 @@ class ConfigManager {
         get {
             userDefaults.string(forKey: UserDefaultsKeys.chatAPIKey) ?? 
             plistValue(forKey: PlistKeys.chatAPIKey) ?? 
-            "app-GJNmuSewORftl9xxWwQLZKd1"  
+            "app-fwXnQZPSDK6QqyoXEaMZRcfX"  
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.chatAPIKey)
@@ -52,7 +52,7 @@ class ConfigManager {
         get {
             userDefaults.string(forKey: UserDefaultsKeys.knowledgeAPIKey) ?? 
             plistValue(forKey: PlistKeys.knowledgeAPIKey) ?? 
-            "dataset-LFcyTGol6Fh8uuSiuORnnH5h"  
+            "dataset-ooZF2QFSdrp671kt8RmQEdN8"  
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.knowledgeAPIKey)
