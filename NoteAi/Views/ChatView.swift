@@ -158,6 +158,8 @@ struct ChatView: View {
                 .shadow(radius: 1)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("Background").ignoresSafeArea())
         .navigationTitle("Chat")
         .navigationBarBackButtonHidden(viewModel.isLoading)
         .alert("Error", isPresented: .init(

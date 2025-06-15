@@ -82,6 +82,8 @@ struct TranscriptionView: View {
                     .padding(.bottom, 30)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("Background").ignoresSafeArea())
         .navigationTitle("Audio Transcription")
         .navigationBarItems(trailing: Button(action: {
             viewModel.prepareForEditing()
@@ -234,7 +236,7 @@ struct TranscriptionView: View {
                 })
                 .alert("Success", isPresented: $viewModel.showSaveSuccessAlert) {
                     Button("OK", role: .cancel) {
-                        showSummary = false // Dismiss the summary sheet
+                        showSummary = false 
                     }
                 } message: {
                     Text("Summary saved successfully.")
