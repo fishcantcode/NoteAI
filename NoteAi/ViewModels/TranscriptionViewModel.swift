@@ -25,6 +25,7 @@ class TranscriptionViewModel: ObservableObject {
     
     @Published var isSummarizing = false
     @Published var summary = ""
+    @Published var showSaveSuccessAlert: Bool = false
     
     private let speechRecognitionService = SpeechRecognitionService()
     private var audioLevelTimer: Timer?
@@ -316,10 +317,8 @@ class TranscriptionViewModel: ObservableObject {
 
     func performFinishFusion() {
         if isRecording {
-            stopLiveTranscription() // This sets isRecording = false and updates necessary states
+            stopLiveTranscription()
         }
-        // At this point, isRecording is false.
-        // stopLiveTranscription() was called either just now or previously (if paused).
         isFinished = true
         prepareForEditing()
     }
@@ -355,10 +354,10 @@ class TranscriptionViewModel: ObservableObject {
     }
     
      
-    func saveSummaryToFile() {
+    func saveSummaryToFile() -> Bool {
         guard !summary.isEmpty else {
             errorMessage = "No summary available to save."
-            return
+            return false
         }
 
         var cleanedSummary = summary
@@ -376,8 +375,11 @@ class TranscriptionViewModel: ObservableObject {
 
         do {
             try documentManager.saveTextToFile(content: cleanedSummary, fileName: fileName)
+            self.showSaveSuccessAlert = true // Set alert flag on success
+            return true // Indicate success
         } catch {
             errorMessage = "Failed to save summary: \(error.localizedDescription)"
+            return false // Indicate failure
         }
     }
 

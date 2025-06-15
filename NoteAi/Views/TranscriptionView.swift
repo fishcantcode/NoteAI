@@ -232,6 +232,13 @@ struct TranscriptionView: View {
                 .navigationBarItems(trailing: Button("Done") {
                     showSummary = false
                 })
+                .alert("Success", isPresented: $viewModel.showSaveSuccessAlert) {
+                    Button("OK", role: .cancel) {
+                        showSummary = false // Dismiss the summary sheet
+                    }
+                } message: {
+                    Text("Summary saved successfully.")
+                }
             }
         }
         .overlay(Group {
@@ -351,7 +358,7 @@ struct TranscriptionView: View {
                            
                     Button(action: {
                         viewModel.performFinishFusion()
-                        isEditingText = true // Ensure editing sheet opens
+                        isEditingText = true 
                     }) {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
@@ -370,8 +377,12 @@ struct TranscriptionView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .shadow(radius: 1)
+            .cornerRadius(15)
+            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
         }
     }
 
@@ -430,8 +441,12 @@ struct TranscriptionView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .shadow(radius: 1)
+            .cornerRadius(15)
+            .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
         }
     }
 
