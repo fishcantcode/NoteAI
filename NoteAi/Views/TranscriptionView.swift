@@ -183,8 +183,14 @@ struct TranscriptionView: View {
                         .font(.headline)
                     
                     if viewModel.isSummarizing {
-                        ProgressView("Generating summary...")
-                            .padding()
+                        VStack {
+                            ProgressView("Generating summary...")
+                            Text("This may take a moment...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.top, 4)
+                        }
+                        .padding()
                     } else if !viewModel.summary.isEmpty {
                         ScrollView {
                             Text(viewModel.summary)
@@ -193,11 +199,29 @@ struct TranscriptionView: View {
                                 .background(Color(.systemBackground))
                                 .cornerRadius(8)
                                 .shadow(radius: 1)
+                                .onAppear {
+                                    print("Summary view appeared with content: \(viewModel.summary.prefix(50))...")
+                                }
                         }
                     } else {
-                        Text("No summary available yet.")
-                            .foregroundColor(.secondary)
-                            .padding()
+                        VStack {
+                            Text("No summary available yet.")
+                                .foregroundColor(.secondary)
+                            if !viewModel.editableText.isEmpty {
+                                Button(action: {
+                                    viewModel.summarizeWithDify()
+                                }) {
+                                    Text("Generate Summary")
+                                        .font(.subheadline)
+                                        .padding(8)
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                                .padding(.top, 8)
+                            }
+                        }
+                        .padding()
                     }
                     
                     Spacer()

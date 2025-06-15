@@ -365,7 +365,6 @@ class TranscriptionViewModel: ObservableObject {
             return
         }
         
-         
         print("[VIEWMODEL] Using Dify Chat API Key: \(ConfigManager.shared.difyChatAPIKey)")
         print("[VIEWMODEL] Using Dify Knowledge ID: \(ConfigManager.shared.difyKnowledgeID)")
         
@@ -377,6 +376,8 @@ class TranscriptionViewModel: ObservableObject {
         isSummarizing = true
         errorMessage = nil
         
+        print("[VIEWMODEL] Sending text for summarization...")
+        
         difyService.sendMessageForSummary(text: editableText) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -384,8 +385,11 @@ class TranscriptionViewModel: ObservableObject {
                 
                 switch result {
                 case .success(let summary):
+                    print("[VIEWMODEL] Received summary from Dify")
                     self.summary = summary
+                    print("[VIEWMODEL] Summary set: \(summary.prefix(50))...")
                 case .failure(let error):
+                    print("[VIEWMODEL] Error getting summary: \(error.localizedDescription)")
                     self.errorMessage = "Summarization error: \(error.localizedDescription)"
                 }
             }

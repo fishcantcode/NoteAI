@@ -16,7 +16,6 @@ struct FolderDetailView: View {
      
     @State private var selectedLocalSummary: Document?
     @State private var localSummaryContent: String = ""
-    @State private var showingLocalSummarySheet: Bool = false
     
      
     init(dataset: KnowledgeDataset, apiManager: APIManager) {
@@ -111,28 +110,39 @@ struct FolderDetailView: View {
             viewModel.loadDocuments()
             viewModel.loadSummaryFiles()  
         }
-        .sheet(isPresented: $showingLocalSummarySheet) {  
-            VStack(alignment: .leading) {
-                HStack {
-                    Text(selectedLocalSummary?.name ?? "Summary")
-                        .font(.title2.bold())
-                    Spacer()
-                    Button {
-                        showingLocalSummarySheet = false
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.gray)
+        .sheet(item: $selectedLocalSummary) { currentSummaryDocument in
+            NavigationView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text(currentSummaryDocument.name)
+                            .font(.title2.bold())
+                        Spacer()
+                        Button {
+                            selectedLocalSummary = nil
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding()
+
+                    Divider()
+
+                    ScrollView {
+                        Text(localSummaryContent)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .padding([.top, .horizontal])
-                
-                Divider()
-                
-                ScrollView {
-                    Text(localSummaryContent)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)  
+                .navigationBarHidden(true)
+                .id(currentSummaryDocument.id)
+                .onAppear {
+                    if let content = viewModel.getSummaryContent(for: currentSummaryDocument) {
+                        self.localSummaryContent = content
+                    } else {
+                        self.localSummaryContent = "Could not load summary content for \(currentSummaryDocument.name)."
+                    }
                 }
             }
         }
@@ -227,14 +237,7 @@ struct FolderDetailView: View {
             Section(header: Text("Saved Summaries").font(.title2).padding(.top)) {
                 ForEach(Array(viewModel.summaryFiles)) { (summaryDocument: Document) in  
                     SummaryRowView(summaryDocument: summaryDocument, viewModel: viewModel) {
-                         
                         self.selectedLocalSummary = summaryDocument
-                        if let content = self.viewModel.getSummaryContent(for: summaryDocument) {
-                            self.localSummaryContent = content
-                        } else {
-                            self.localSummaryContent = "Could not load summary content for \(summaryDocument.name)."
-                        }
-                        self.showingLocalSummarySheet = true
                     }
                     .contextMenu {  
                         Button(role: .destructive) {
@@ -371,4 +374,5 @@ struct FolderDetailView: View {
                 .environmentObject(mockAPIManager)  
         }
     }
+
 }

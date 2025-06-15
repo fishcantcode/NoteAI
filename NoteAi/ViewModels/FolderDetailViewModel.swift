@@ -129,13 +129,11 @@ class FolderDetailViewModel: ObservableObject {
     func getSummaryContent(for document: Document) -> String? {
         print("FolderDetailViewModel: getSummaryContent(for: \(document.name)) called")
         do {
-             
-            let content = try DocumentManager.shared.readTextFromFile(fileName: document.name)
+            let content = try String(contentsOf: document.url, encoding: .utf8)
+            print("Successfully read content from \(document.url.path)")
             return content
         } catch {
-            print("FolderDetailViewModel: Error getting summary content for \(document.name): \(error.localizedDescription)")
-             
-             
+            print("FolderDetailViewModel: Error reading content from \(document.url.path): \(error.localizedDescription)")
             return nil
         }
     }
