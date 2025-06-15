@@ -31,10 +31,10 @@ class FolderDetailViewModel: ObservableObject {
                 switch result {
                 case .success(let fetchedDocuments):
                     self.documents = fetchedDocuments
-                    print("Successfully loaded \(fetchedDocuments.count) documents for dataset: \(self.dataset.name ?? "N/A")")
+                    print("Successfully loaded \(fetchedDocuments.count) documents for dataset: \(self.dataset.name)")
                 case .failure(let error):
                     self.errorMessage = "Failed to load documents: \(error.localizedDescription)"
-                    print("Error loading documents: \(error.localizedDescription) for dataset: \(self.dataset.name ?? "N/A")")
+                    print("Error loading documents: \(error.localizedDescription) for dataset: \(self.dataset.name)")
                 }
             }
         }

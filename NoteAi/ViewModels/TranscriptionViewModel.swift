@@ -7,6 +7,7 @@ import Speech
 class TranscriptionViewModel: ObservableObject {
      
     @Published var isRecording = false
+    @Published var isFinished = false
     @Published var recordingTime: TimeInterval = 0.0
     @Published var finalRecordingDuration: TimeInterval = 0.0
     @Published var isDetectingSpeech = false
@@ -44,8 +45,27 @@ class TranscriptionViewModel: ObservableObject {
     }
     
     private func checkMicrophonePermission() {
+        #if canImport(AVAudioApplication)
+        switch AVAudioApplication.shared.recordPermission {
+        case .granted:
+            self.microphonePermissionGranted = true
+        case .denied:
+            self.microphonePermissionGranted = false
+            self.errorMessage = "Microphone access is required for recording. Please grant access in Settings."
+        case .undetermined:
+            AVAudioApplication.requestRecordPermission { [weak self] granted in
+                DispatchQueue.main.async {
+                    self?.microphonePermissionGranted = granted
+                    if !granted {
+                        self?.errorMessage = "Microphone access is required for recording. Please grant access in Settings."
+                    }
+                }
+            }
+        @unknown default:
+            self.microphonePermissionGranted = false
+        }
+        #else
         let audioSession = AVAudioSession.sharedInstance()
-        
         switch audioSession.recordPermission {
         case .granted:
             self.microphonePermissionGranted = true
@@ -64,6 +84,7 @@ class TranscriptionViewModel: ObservableObject {
         @unknown default:
             self.microphonePermissionGranted = false
         }
+        #endif
     }
     
     private func checkSpeechRecognitionPermission() {
@@ -208,7 +229,14 @@ class TranscriptionViewModel: ObservableObject {
         startAudioLevelMonitoring()
     }
     
+    func finishRecording() {
+        stopLiveTranscription()
+        isFinished = true
+    }
+    
     func stopLiveTranscription() {
+        guard isRecording else { return }
+        
         speechRecognitionService.stopLiveTranscription()
         finalRecordingDuration = recordingTime
         
@@ -270,11 +298,11 @@ class TranscriptionViewModel: ObservableObject {
     func clearTranscription() {
         transcriptionText = ""
         currentStreamingText = ""
-        editableText = ""
         summary = ""
         segments = []
         recordingTime = 0
         finalRecordingDuration = 0
+        isFinished = false
         errorMessage = nil
     }
     func getCurrentTranscriptionText() -> String {
@@ -284,6 +312,16 @@ class TranscriptionViewModel: ObservableObject {
         if editableText.isEmpty && !transcriptionText.isEmpty {
             editableText = transcriptionText
         }
+    }
+
+    func performFinishFusion() {
+        if isRecording {
+            stopLiveTranscription() // This sets isRecording = false and updates necessary states
+        }
+        // At this point, isRecording is false.
+        // stopLiveTranscription() was called either just now or previously (if paused).
+        isFinished = true
+        prepareForEditing()
     }
     
      

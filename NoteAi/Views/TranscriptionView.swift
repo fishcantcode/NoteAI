@@ -10,21 +10,17 @@ struct TranscriptionView: View {
     
     var body: some View {
         VStack {
-             
+            
             TextField("Enter title for your recording", text: $viewModel.documentTitle)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             
-             
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                     
+                    
                     HStack {
                         if viewModel.isRecording {
-                            Text(formattedTime(viewModel.recordingTime))
-                                .font(.caption.monospacedDigit())
-                                .foregroundColor(.red)
-                                .frame(width: 80, alignment: .leading)
                         }
                         
                         Spacer()
@@ -41,85 +37,49 @@ struct TranscriptionView: View {
                                 .font(.caption)
                                 .foregroundColor(.red)
                         } else if !viewModel.transcriptionText.isEmpty {
-                            Text("Duration: \(formattedTime(viewModel.finalRecordingDuration))")
+                            Text("Duration: " + String(format: "%d:%02d", Int((viewModel.isFinished ? viewModel.finalRecordingDuration : viewModel.recordingTime)) / 60, Int((viewModel.isFinished ? viewModel.finalRecordingDuration : viewModel.recordingTime)) % 60))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
                     .padding(.horizontal)
                     
-                     
                     VStack(alignment: .leading) {
-                        if viewModel.transcriptionText.isEmpty && !viewModel.isRecording {
+                        if viewModel.transcriptionText.isEmpty && !viewModel.isRecording && !viewModel.isFinished {
                             Text("Tap the microphone button to start recording")
                                 .foregroundColor(.secondary)
                                 .padding()
                         } else {
-                            VStack(alignment: .leading, spacing: 8) {
-                                 
-                                if !viewModel.transcriptionText.isEmpty {
-                                    Text(viewModel.transcriptionText)
-                                        .padding(.bottom, 4)
-                                }
-                                
-                                 
-                                if viewModel.isRecording {
-                                    if viewModel.isDetectingSpeech {
-                                        Text("Waiting for speech...")
-                                            .foregroundColor(.secondary)
-                                    } else {
-                                        Text("Listening... Tap to pause")
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
+                            if !viewModel.transcriptionText.isEmpty {
+                                Text(viewModel.transcriptionText)
+                                    .padding(.bottom, 4)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.systemBackground))
-                            .cornerRadius(8)
-                            .shadow(radius: 1)
                         }
+                        
                     }
                     .padding(.horizontal)
                 }
                 .padding(.vertical)
             }
             
-             
+            
             Spacer().frame(height: 20)
             
-             
-             
-            Button(action: {
-                if viewModel.isRecording {
-                    viewModel.stopLiveTranscription()
-                } else {
-                    viewModel.startLiveTranscription()
-                }
-            }) {
-                VStack {
-                    Image(systemName: viewModel.isRecording ? "pause.circle.fill" : "mic.circle.fill")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(viewModel.isRecording ? .orange : .blue)
-                    
-                    if !viewModel.transcriptionText.isEmpty && !viewModel.isRecording {
-                        Text("Tap to continue")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .padding(.bottom, 30)
             
-             
-            if !viewModel.transcriptionText.isEmpty {
-                Button("Copy Transcription") {
-                    UIPasteboard.general.string = viewModel.transcriptionText
-                    showCopiedToast = true
-                }
-                .buttonStyle(.borderedProminent)
-                .padding(.bottom)
+            
+            if viewModel.isRecording {
+                RecordingCardView(viewModel: viewModel, isEditingText: $isEditingText)
+                    .padding(.bottom, 30)
+            } else if !viewModel.isRecording && !viewModel.isFinished && !viewModel.transcriptionText.isEmpty {
+                PausedCardView(viewModel: viewModel, isEditingText: $isEditingText)
+                    .padding(.bottom, 30)
+            } else if viewModel.isFinished && !viewModel.transcriptionText.isEmpty {
+                FinishedStateActionsView(viewModel: viewModel, showCopiedToast: $showCopiedToast, isEditingText: $isEditingText)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+            } else {
+                InitialMicButtonView(viewModel: viewModel)
+                    .padding(.bottom, 30)
             }
         }
         .navigationTitle("Audio Transcription")
@@ -131,11 +91,11 @@ struct TranscriptionView: View {
         }
             .disabled(viewModel.isRecording || viewModel.transcriptionText.isEmpty))
         .onDisappear {
-             
+            
             viewModel.cleanup()
         }
-         
-         
+        
+        
         .sheet(isPresented: $isEditingText) {
             NavigationView {
                 VStack {
@@ -169,7 +129,7 @@ struct TranscriptionView: View {
                 })
             }
         }
-         
+        
         .sheet(isPresented: $showSummary) {
             NavigationView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -286,7 +246,7 @@ struct TranscriptionView: View {
                     Spacer()
                 }
                 .transition(.opacity)
-                .animation(.easeInOut)
+                .animation(.easeInOut, value: showCopiedToast)
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         showCopiedToast = false
@@ -305,22 +265,178 @@ struct TranscriptionView: View {
             )
         }
     }
-    
-    private func formattedTime(_ timeInterval: TimeInterval) -> String {
-        let totalSeconds = Int(timeInterval)
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        let milliseconds = Int((timeInterval.truncatingRemainder(dividingBy: 1)) * 100)
-        return String(format: "%d:%02d.%02d", minutes, seconds, milliseconds)
-    }
-    
+    private struct InitialMicButtonView: View {
+        @ObservedObject var viewModel: TranscriptionViewModel
 
-    
-     
+        var body: some View {
+            Button(action: {
+                viewModel.startLiveTranscription()
+            }) {
+                VStack {
+                    Image(systemName: "mic.circle.fill")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.blue)
+                    
+                    if !viewModel.transcriptionText.isEmpty {
+                        Text("Tap to continue")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private struct FinishedStateActionsView: View {
+        @ObservedObject var viewModel: TranscriptionViewModel
+        @Binding var showCopiedToast: Bool
+        @Binding var isEditingText: Bool
+
+        var body: some View {
+            HStack(spacing: 16) {
+                Button(action: {
+                    viewModel.prepareForEditing() 
+                    isEditingText = true
+                }) {
+                    Label("Edit", systemImage: "pencil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                
+                Button(action: {
+                    UIPasteboard.general.string = viewModel.transcriptionText
+                    showCopiedToast = true
+                }) {
+                    Label("Copy", systemImage: "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    private struct PausedCardView: View {
+        @ObservedObject var viewModel: TranscriptionViewModel
+        @Binding var isEditingText: Bool
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Paused")
+                        .font(.headline)
+                   
+                }
+                
+                Text(String(format: "%d:%02d", Int(viewModel.recordingTime) / 60, Int(viewModel.recordingTime) % 60))
+                    .font(.title2.monospacedDigit())
+                    .foregroundColor(.blue)
+                
+                HStack {
+                    Button(action: {
+                        viewModel.startLiveTranscription() 
+                    }) {
+                        HStack {
+                            Image(systemName: "play.fill")
+                            Text("Continue")
+                        }
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                           
+                    Button(action: {
+                        viewModel.performFinishFusion()
+                        isEditingText = true // Ensure editing sheet opens
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Finish & Edit")
+                        }
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .shadow(radius: 1)
+        }
+    }
+
+    private struct RecordingCardView: View {
+        @ObservedObject var viewModel: TranscriptionViewModel
+        @Binding var isEditingText: Bool
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Recording")
+                        .font(.headline)
+                    
+                    Spacer()
+                }
+                
+                Text(String(format: "%d:%02d", Int(viewModel.recordingTime) / 60, Int(viewModel.recordingTime) % 60))
+                    .font(.title2.monospacedDigit())
+                    .foregroundColor(.blue)
+                
+                HStack {
+                    Button(action: {
+                        viewModel.stopLiveTranscription() 
+                    }) {
+                        HStack {
+                            Image(systemName: "pause.fill")
+                            Text("Pause")
+                        }
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.orange)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                    
+                    Button(action: {
+                        viewModel.performFinishFusion()
+                        isEditingText = true
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Finish & Edit")
+                        }
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.red)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(BorderlessButtonStyle())
+                }
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+            .shadow(radius: 1)
+        }
+    }
+
     struct TranscriptionError: Identifiable {
         let id = UUID()
         let message: String
     }
-    
-     
 }
