@@ -65,10 +65,10 @@ struct TranscriptionView: View {
                                  
                                 if viewModel.isRecording {
                                     if viewModel.isDetectingSpeech {
-                                        Text("Waiting...")
+                                        Text("Waiting for speech...")
                                             .foregroundColor(.secondary)
                                     } else {
-                                        Text("Listening...")
+                                        Text("Listening... Tap to pause")
                                             .foregroundColor(.secondary)
                                     }
                                 }
@@ -97,10 +97,18 @@ struct TranscriptionView: View {
                     viewModel.startLiveTranscription()
                 }
             }) {
-                Image(systemName: viewModel.isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .foregroundColor(viewModel.isRecording ? .red : .blue)
+                VStack {
+                    Image(systemName: viewModel.isRecording ? "pause.circle.fill" : "mic.circle.fill")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(viewModel.isRecording ? .orange : .blue)
+                    
+                    if !viewModel.transcriptionText.isEmpty && !viewModel.isRecording {
+                        Text("Tap to continue")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
             }
             .padding(.bottom, 30)
             
