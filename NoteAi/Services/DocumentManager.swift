@@ -66,7 +66,7 @@ class DocumentManager {
         }
     }
 
-    func saveTextToFile(content: String, fileName: String) throws {
+    func saveTextToFile(content: String, fileName: String, documentId: String? = nil) throws {
         let fileURL = baseURL.appendingPathComponent(fileName)
         
         do {
@@ -76,6 +76,11 @@ class DocumentManager {
             print("DocumentManager: Error saving text to file \(fileName): \(error.localizedDescription)")
             throw error  
         }
+    }
+
+    func fileExists(fileName: String) -> Bool {
+        let fileURL = baseURL.appendingPathComponent(fileName)
+        return fileManager.fileExists(atPath: fileURL.path)
     }
 
     func loadSummaryFiles() -> [Document] {
@@ -89,8 +94,38 @@ class DocumentManager {
                 if resourceValues.isDirectory == false && itemURL.pathExtension.lowercased() == "txt" {
                     let creationDate = resourceValues.creationDate ?? Date.distantPast
                     let name = resourceValues.name ?? itemURL.lastPathComponent
+                    
+                    // Extract document ID from file content
+                    var extractedDocumentId: String? = nil
+                    if let fileContent = try? String(contentsOf: itemURL, encoding: .utf8) {
+                        let lines = fileContent.components(separatedBy: .newlines)
+                        if let firstLine = lines.first, firstLine.hasPrefix("DOCUMENT_ID: ") {
+                            extractedDocumentId = String(firstLine.dropFirst("DOCUMENT_ID: ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                    }
                      
-                    let document = Document(id: UUID(), name: name, type: .file, creationDate: creationDate, url: itemURL)  
+                    var document = Document(
+                        id: UUID(uuidString: extractedDocumentId ?? "") ?? UUID(), 
+                        name: name, 
+                        type: .file, 
+                        creationDate: creationDate, 
+                        url: itemURL
+                    )
+                    
+                    // If we extracted a document ID, store it as the conversation ID as well
+                    if let docId = extractedDocumentId {
+                        document = Document(
+                            id: UUID(uuidString: docId) ?? UUID(),
+                            name: name,
+                            type: .file,
+                            creationDate: creationDate,
+                            url: itemURL,
+                            content: nil,
+                            fileExtension: itemURL.pathExtension,
+                            difyConversationId: docId
+                        )
+                    }
+                    
                     summaryDocuments.append(document)
                 }
             }
@@ -110,6 +145,34 @@ class DocumentManager {
         } catch {
             print("DocumentManager: Error reading text from file \(fileName): \(error.localizedDescription)")
             throw error
+        }
+    }
+    
+    // MARK: - Document ID Utilities
+    
+    func extractDocumentId(from content: String) -> String? {
+        let lines = content.components(separatedBy: .newlines)
+        if let firstLine = lines.first, firstLine.hasPrefix("DOCUMENT_ID: ") {
+            return String(firstLine.dropFirst("DOCUMENT_ID: ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return nil
+    }
+    
+    func extractDocumentTitle(from content: String) -> String? {
+        let lines = content.components(separatedBy: .newlines)
+        for line in lines {
+            if line.hasPrefix("TITLE: ") {
+                return String(line.dropFirst("TITLE: ".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+        return nil
+    }
+    
+    func getDocumentForConversation(conversationName: String) -> Document? {
+        let summaryFiles = loadSummaryFiles()
+        return summaryFiles.first { document in
+            guard let difyConversationId = document.difyConversationId else { return false }
+            return conversationName.contains(difyConversationId) || difyConversationId == conversationName
         }
     }
 }

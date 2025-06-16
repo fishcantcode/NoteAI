@@ -8,6 +8,7 @@ struct Conversation: Identifiable, Codable {
     var introduction: String
     var createdAt: Int
     var updatedAt: Int
+    var sourceDocumentId: String? // Link to the document that created this conversation
     
      
     var createdDate: Date {
@@ -34,5 +35,6 @@ struct Conversation: Identifiable, Codable {
         case introduction
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case sourceDocumentId = "source_document_id"
     }
 }

@@ -25,6 +25,7 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     private let apiService: ChatAPIService
     private let userId: String
     private var conversationId: String?
+    private var sourceDocumentId: String? // Track the originating document
     private var cancellables = Set<AnyCancellable>()
     private var progressTimers = [String: Timer]()
     private var progressSeconds = [String: Int]()
@@ -38,10 +39,12 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     init(apiService: ChatAPIService = ChatAPIService(),
          userId: String = "user-123",
          conversationId: String?,
+         sourceDocumentId: String? = nil,
          onNewConversationCreated: ((String) -> Void)? = nil) {
         self.apiService = apiService
         self.userId = userId
         self.conversationId = conversationId
+        self.sourceDocumentId = sourceDocumentId
         self.onNewConversationCreated = onNewConversationCreated
         
         super.init()

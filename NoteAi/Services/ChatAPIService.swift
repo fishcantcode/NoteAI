@@ -222,38 +222,46 @@ class ChatAPIService {
     }
     
      
-    func createConversation(name: String) -> AnyPublisher<Data, APIError> {
+    func createConversation(name: String, sourceDocumentId: String? = nil) -> AnyPublisher<Data, APIError> {
         print("\n==== CREATING NEW CONVERSATION ====\n")
         
-         
-         
-        
+        // Debug logging
         print("DEBUG: Direct conversation creation isn't supported. Using chat-messages with auto naming instead.")
         
-         
+        // Create request for chat-messages endpoint
         guard var request = createRequest(for: "chat-messages", method: "POST") else {
             print("DEBUG: Failed to create request for new conversation via chat-messages")
             return Fail(error: APIError.invalidURL).eraseToAnyPublisher()
         }
         
-         
+        // Debug logging
         print("DEBUG: Conversation creation URL: \(request.url?.absoluteString ?? "unknown")")
-        print("DEBUG: Request method: \(request.httpMethod ?? "unknown")")
-        print("DEBUG: Request headers: \(request.allHTTPHeaderFields?.description ?? "none")")
+        print("DEBUG: Creating conversation with name: \(name)")
+        if let docId = sourceDocumentId {
+            print("DEBUG: Linking conversation to document ID: \(docId)")
+        }
         
-         
-         
-        let firstMessage = "Hello! This is the first message for a new conversation named: " + name + ". Please respond to start our chat."
+        // Create first message with document reference if available
+        var firstMessage = "Hello! This is the first message for a new conversation"
+        if let docId = sourceDocumentId {
+            firstMessage += " linked to document ID: \(docId)"
+        }
+        firstMessage += " named: \(name). Please respond to start our chat."
         
         print("DEBUG: Starting new conversation with first message: '\(firstMessage)'")
         
-        let requestBody: [String: Any] = [
+        var requestBody: [String: Any] = [
             "query": firstMessage,
             "user": "user-123",  
             "response_mode": "blocking",  
             "auto_generate_name": true,  
             "inputs": [:]  
         ]
+        
+        // Include document metadata if available
+        if let docId = sourceDocumentId {
+            requestBody["inputs"] = ["source_document_id": docId]
+        }
         
         print("DEBUG: Creating new conversation with name (via auto_generate_name): \(name)")
         
