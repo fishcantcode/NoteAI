@@ -27,6 +27,8 @@ class TranscriptionViewModel: ObservableObject {
     @Published var summary = ""
     @Published var showSaveSuccessAlert: Bool = false
     
+    @Published var documentId: String = UUID().uuidString
+    
     private let speechRecognitionService = SpeechRecognitionService()
     private var audioLevelTimer: Timer?
     private var audioLevelObserver: NSObjectProtocol?
@@ -305,6 +307,7 @@ class TranscriptionViewModel: ObservableObject {
         finalRecordingDuration = 0
         isFinished = false
         errorMessage = nil
+        documentId = UUID().uuidString // Generate new ID for each transcription
     }
     func getCurrentTranscriptionText() -> String {
         return transcriptionText
@@ -371,10 +374,21 @@ class TranscriptionViewModel: ObservableObject {
             print("[VIEWMODEL] Error creating regex for <think> tag removal: \(error.localizedDescription)")
         }
 
+        // Add document ID header to the summary
+        let summaryWithId = """
+        DOCUMENT_ID: \(documentId)
+        CREATED: \(Date().formatted())
+        TITLE: \(documentTitle.isEmpty ? "Untitled Transcription" : documentTitle)
+        
+        ---
+        
+        \(cleanedSummary)
+        """
+
         let fileName = "\(documentTitle.isEmpty ? "Untitled Summary" : documentTitle).txt"
 
         do {
-            try documentManager.saveTextToFile(content: cleanedSummary, fileName: fileName)
+            try documentManager.saveTextToFile(content: summaryWithId, fileName: fileName, documentId: documentId)
             self.showSaveSuccessAlert = true // Set alert flag on success
             return true // Indicate success
         } catch {
