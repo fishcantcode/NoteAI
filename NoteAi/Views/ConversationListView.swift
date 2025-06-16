@@ -30,31 +30,7 @@ struct ConversationListView: View {
                 viewModel.loadConversations()
             }
             .navigationTitle("Conversations")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showingCreateConversation = true
-                    }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .alert("New Conversation", isPresented: $showingCreateConversation) {
-                TextField("Conversation Name", text: $newConversationName)
-                Button("Cancel", role: .cancel) {
-                    newConversationName = ""
-                }
-                Button("Create") {
-                    if newConversationName.isEmpty {
-                        viewModel.createNewConversation()
-                    } else {
-                        viewModel.createNewConversation(name: newConversationName)
-                    }
-                    newConversationName = ""
-                }
-            } message: {
-                Text("Enter a name for the new conversation or leave blank for auto-generated name")
-            }
+
             .overlay {
                 if viewModel.isCreatingConversation {
                     ProgressView("Creating conversation...")

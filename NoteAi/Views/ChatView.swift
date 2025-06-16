@@ -11,13 +11,22 @@ struct ChatView: View {
     
     
     var onNewConversationCreated: ((String) -> Void)?
-    
-    init(conversationId: String?, onNewConversationCreated: ((String) -> Void)? = nil) {
+    let sourceDocumentId: String? // Added sourceDocumentId
+    let documentContext: String?  // Added documentContext
+
+    init(conversationId: String?, 
+         sourceDocumentId: String? = nil, // Added sourceDocumentId with default nil
+         documentContext: String? = nil,  // Added documentContext with default nil
+         onNewConversationCreated: ((String) -> Void)? = nil) {
         self.conversationId = conversationId
+        self.sourceDocumentId = sourceDocumentId     // Assign sourceDocumentId
+        self.documentContext = documentContext       // Assign documentContext
         self.onNewConversationCreated = onNewConversationCreated
         
         _viewModel = StateObject(wrappedValue: ChatViewModel(
             conversationId: conversationId,
+            sourceDocumentId: sourceDocumentId,     // Pass sourceDocumentId
+            documentContext: documentContext,       // Pass documentContext
             onNewConversationCreated: onNewConversationCreated
         ))
     }
@@ -280,10 +289,15 @@ struct MessageRow: View {
     
     #Preview {
         NavigationView {
-            
-            ChatView(conversationId: "preview-id-123", onNewConversationCreated: { newId in
-                print("Preview: New conversation created with ID: \(newId)")
-            })
+            // Example for previewing a new chat with document context
+            ChatView(
+                conversationId: nil, 
+                sourceDocumentId: "doc-preview-123", 
+                documentContext: "This is the summary of the document for preview.", 
+                onNewConversationCreated: { newId in
+                    print("Preview: New conversation created with ID: \(newId)")
+                }
+            )
         }
     }
 

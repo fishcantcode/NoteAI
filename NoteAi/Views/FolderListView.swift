@@ -72,20 +72,6 @@ struct FolderListView: View {
                     ConnectionStatusIndicator()
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {  
-                    Button(action: {
-                        showingFolderInput = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(Color("MainColor"))  
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: ConversationListView()) {
-                        Image(systemName: "message.fill").foregroundColor(Color("MainColor"))
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {  
                     Button {
                         showingConnectionSettings = true
                     } label: {
