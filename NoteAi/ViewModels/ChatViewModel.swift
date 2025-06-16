@@ -25,8 +25,8 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     private let apiService: ChatAPIService
     private let userId: String
     private var conversationId: String?
-    private var sourceDocumentId: String? // Track the originating document
-    private var documentContext: String? // Holds the summary content for context
+    private var sourceDocumentId: String?  
+    private var documentContext: String?  
     private var cancellables = Set<AnyCancellable>()
     private var progressTimers = [String: Timer]()
     private var progressSeconds = [String: Int]()
@@ -41,13 +41,13 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
          userId: String = "user-123",
          conversationId: String?,
          sourceDocumentId: String? = nil,
-         documentContext: String? = nil, // Added documentContext parameter
+         documentContext: String? = nil,  
          onNewConversationCreated: ((String) -> Void)? = nil) {
         self.apiService = apiService
         self.userId = userId
         self.conversationId = conversationId
         self.sourceDocumentId = sourceDocumentId
-        self.documentContext = documentContext // Assign documentContext
+        self.documentContext = documentContext  
         self.onNewConversationCreated = onNewConversationCreated
         
         super.init()
@@ -285,16 +285,16 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
          
         let tempId = UUID().uuidString
         
-        // Check if this will use document context to show appropriate message
+         
         let willUseDocumentContext = (self.conversationId == nil && self.documentContext != nil && !self.documentContext!.isEmpty)
         let displayMessage = willUseDocumentContext ? "\(messageToSend) [📄 Using document context]" : messageToSend
         
-        // Create temporary message to show in UI immediately
+         
         let currentTimestamp = Int(Date().timeIntervalSince1970)
         let tempMessage = Message(
             id: tempId,
             conversationId: self.conversationId ?? "",  
-            query: displayMessage, // Show enhanced message text to user
+            query: displayMessage,  
             answer: "",
             createdAt: currentTimestamp,
             parentMessageId: nil,
@@ -307,7 +307,7 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
             _retrieverResources: nil
         )
         
-        // Add temporary message to UI
+         
         DispatchQueue.main.async {
             self.messages.append(tempMessage)
         }
@@ -315,7 +315,7 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
          
         startWaitingTimer()
         
-        // Process document context for new conversations
+         
         var finalMessageToSend = messageToSend
         var chatInputs: [String: String] = [:]
         
@@ -323,7 +323,7 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
             print("DEBUG: 🔄 Processing document context for new conversation")
             print("DEBUG: 📄 Document context length: \(context.count) characters")
             
-            // Create a comprehensive pre-prompt that instructs the AI to use the document content
+             
             let prePrompt = """
             [SYSTEM CONTEXT] You are an AI assistant with access to a specific document's content. Your role is to answer questions and provide insights based EXCLUSIVELY on the information contained in this document.
 
@@ -344,16 +344,16 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
             Please answer the user's question based on this document content.
             """
             
-            // Use the enhanced message as the actual query
+             
             finalMessageToSend = prePrompt
             
-            // Also pass as input for additional context (some APIs might use both)
+             
             chatInputs["document_context"] = context
             chatInputs["original_user_query"] = messageToSend
             
             print("DEBUG: ✅ Document context processed and added to message")
             
-            // Clear after first use to prevent it from being added to subsequent messages
+             
             self.documentContext = nil
         } else {
             print("DEBUG: ℹ️ No document context to process (conversationId: \(self.conversationId ?? "nil"), documentContext: \(self.documentContext?.isEmpty != false ? "empty/nil" : "available"))")
@@ -364,7 +364,7 @@ class ChatViewModel: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
             userId: userId,
             conversationId: self.conversationId,  
             responseMode: responseMode,
-            inputs: chatInputs // Pass the inputs
+            inputs: chatInputs  
         )
         .sink(
             receiveCompletion: { [weak self] completion in

@@ -8,7 +8,7 @@ struct Conversation: Identifiable, Codable {
     var introduction: String
     var createdAt: Int
     var updatedAt: Int
-    var sourceDocumentId: String? // Link to the document that created this conversation
+    var sourceDocumentId: String?  
     
      
     var createdDate: Date {

@@ -3,13 +3,13 @@ import SwiftUI
 struct ConversationDashboardView: View {
     @ObservedObject var viewModel: FolderDetailViewModel
     let summaryDocument: Document
-    @State private var summaryContent: String? // To hold the loaded summary
-    @State private var isLoadingContent = false // Loading state for content
-    @State private var contentLoadError: String? // Error state for content loading
+    @State private var summaryContent: String?  
+    @State private var isLoadingContent = false  
+    @State private var contentLoadError: String?  
 
     var body: some View {
         VStack(spacing: 20) {
-            // Document info header
+             
             VStack(alignment: .leading, spacing: 8) {
                 Text("Document: \(summaryDocument.name)")
                     .font(.title2)
@@ -31,7 +31,7 @@ struct ConversationDashboardView: View {
             .background(Color(.secondarySystemGroupedBackground))
             .cornerRadius(12)
             
-            // Content loading status
+             
             if isLoadingContent {
                 HStack {
                     ProgressView()
@@ -63,15 +63,15 @@ struct ConversationDashboardView: View {
                 .padding(.horizontal)
             }
 
-            // Chat options section
+             
             VStack(spacing: 16) {
                 if let existingConversationId = summaryDocument.difyConversationId {
-                    // Define chatViewForExisting INSIDE the scope where existingConversationId is available
+                     
                     let chatViewForExisting = ChatView(
                         conversationId: existingConversationId,
-                        sourceDocumentId: summaryDocument.difyConversationId, // Pass document ID
-                        documentContext: summaryContent, // Pass loaded summary content
-                        onNewConversationCreated: { newIdInClosure in // Renamed to avoid conflict if any
+                        sourceDocumentId: summaryDocument.difyConversationId,  
+                        documentContext: summaryContent,  
+                        onNewConversationCreated: { newIdInClosure in  
                             viewModel.saveDifyConversationId(for: summaryDocument, difyId: newIdInClosure)
                         }
                     )
@@ -101,12 +101,12 @@ struct ConversationDashboardView: View {
                         .cornerRadius(12)
                 }
 
-                // Prepare ChatView for a new conversation, passing the document context
+                 
                 let chatViewForNew = ChatView(
                     conversationId: nil, 
-                    sourceDocumentId: summaryDocument.id.uuidString, // Use document.id for new chats consistently for sourceDocumentId
-                    documentContext: summaryContent, // Pass loaded summary content
-                    onNewConversationCreated: { newIdInClosure in // Renamed to avoid conflict
+                    sourceDocumentId: summaryDocument.id.uuidString,  
+                    documentContext: summaryContent,  
+                    onNewConversationCreated: { newIdInClosure in  
                         viewModel.saveDifyConversationId(for: summaryDocument, difyId: newIdInClosure)
                     }
                 )
@@ -132,7 +132,7 @@ struct ConversationDashboardView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
-                .disabled(summaryContent == nil && !isLoadingContent) // Disable if no content loaded
+                .disabled(summaryContent == nil && !isLoadingContent)  
             }
             
             Spacer()
@@ -148,10 +148,10 @@ struct ConversationDashboardView: View {
         }
     }
     
-    // MARK: - Private Methods
+     
     
     private func loadDocumentContent() {
-        guard summaryContent == nil else { return } // Don't reload if already loaded
+        guard summaryContent == nil else { return }  
         
         isLoadingContent = true
         contentLoadError = nil

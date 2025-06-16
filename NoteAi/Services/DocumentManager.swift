@@ -95,7 +95,7 @@ class DocumentManager {
                     let creationDate = resourceValues.creationDate ?? Date.distantPast
                     let name = resourceValues.name ?? itemURL.lastPathComponent
                     
-                    // Extract document ID from file content
+                     
                     var extractedDocumentId: String? = nil
                     if let fileContent = try? String(contentsOf: itemURL, encoding: .utf8) {
                         let lines = fileContent.components(separatedBy: .newlines)
@@ -112,7 +112,7 @@ class DocumentManager {
                         url: itemURL
                     )
                     
-                    // If we extracted a document ID, store it as the conversation ID as well
+                     
                     if let docId = extractedDocumentId {
                         document = Document(
                             id: UUID(uuidString: docId) ?? UUID(),
@@ -148,7 +148,7 @@ class DocumentManager {
         }
     }
     
-    // MARK: - Document ID Utilities
+     
     
     func extractDocumentId(from content: String) -> String? {
         let lines = content.components(separatedBy: .newlines)

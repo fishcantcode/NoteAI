@@ -307,7 +307,7 @@ class TranscriptionViewModel: ObservableObject {
         finalRecordingDuration = 0
         isFinished = false
         errorMessage = nil
-        documentId = UUID().uuidString // Generate new ID for each transcription
+        documentId = UUID().uuidString  
     }
     func getCurrentTranscriptionText() -> String {
         return transcriptionText
@@ -374,7 +374,7 @@ class TranscriptionViewModel: ObservableObject {
             print("[VIEWMODEL] Error creating regex for <think> tag removal: \(error.localizedDescription)")
         }
 
-        // Add document ID header to the summary
+         
         let summaryWithId = """
         DOCUMENT_ID: \(documentId)
         CREATED: \(Date().formatted())
@@ -389,11 +389,11 @@ class TranscriptionViewModel: ObservableObject {
 
         do {
             try documentManager.saveTextToFile(content: summaryWithId, fileName: fileName, documentId: documentId)
-            self.showSaveSuccessAlert = true // Set alert flag on success
-            return true // Indicate success
+            self.showSaveSuccessAlert = true  
+            return true  
         } catch {
             errorMessage = "Failed to save summary: \(error.localizedDescription)"
-            return false // Indicate failure
+            return false  
         }
     }
 
