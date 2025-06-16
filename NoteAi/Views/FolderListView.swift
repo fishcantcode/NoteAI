@@ -42,9 +42,13 @@ struct FolderListView: View {
                 } else {
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 20) {
+                            CreateNewFolderCardView {
+                                showingFolderInput = true
+                            }
+
                             ForEach(viewModel.folders) { (folder: KnowledgeDataset) in  
                                 NavigationLink(destination: FolderDetailView(dataset: folder, apiManager: apiManager)) {  
-                                    FolderView(folderName: folder.name, folderIcon: "folder.fill")  
+                                    FolderView(folderName: folder.name)  
                                 }
                                 .contextMenu {
                                     Button(role: .destructive) {
@@ -72,82 +76,115 @@ struct FolderListView: View {
                         showingFolderInput = true
                     }) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)  
+                            .font(.title2)
+                            .foregroundColor(Color("MainColor"))  
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: ConversationListView()) {
-                        Image(systemName: "message.fill")
+                        Image(systemName: "message.fill").foregroundColor(Color("MainColor"))
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {  
                     Button {
                         showingConnectionSettings = true
                     } label: {
-                        Image(systemName: "gearshape.fill")
+                        Image(systemName: "gearshape.fill").foregroundColor(Color("MainColor"))
                     }
                 }
             }
             .sheet(isPresented: $showingConnectionSettings) {
                 ConnectionSettingsView()
             }
-            .sheet(isPresented: $showingFolderInput) {
-                 
-                VStack {
-                    Text("Create New Knowledge Base")
-                        .font(.headline)
-                        .padding()
-                    TextField("Enter name", text: $newFolderName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                    HStack {
-                        Button("Cancel") {
-                            showingFolderInput = false
-                            newFolderName = ""
-                        }
-                        .padding()
-                        Spacer()
-                        Button("Create") {
-                            if !newFolderName.isEmpty {
-                                viewModel.createFolder(named: newFolderName)  
-                                showingFolderInput = false
-                                newFolderName = ""
-                            }
-                        }
-                        .padding()
-                    }
-                }
-                .padding()
-                 
-                .frame(minWidth: 300, idealHeight: 200)
-            }
+
             .onAppear {
                 viewModel.loadFolders()  
                 apiManager.checkOverallConnectionStatus()  
+            }
+            .alert("Create New Knowledge Base", isPresented: $showingFolderInput) {
+                TextField("Enter name", text: $newFolderName)
+                Button("Create") {
+                    if !newFolderName.isEmpty {
+                        viewModel.createFolder(named: newFolderName)
+                        newFolderName = "" 
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    newFolderName = "" 
+                }
+            } message: {
+                Text("Please enter a name for your new knowledge base.")
             }
         }
     }
 }
 
  
-struct FolderView: View {
-    let folderName: String
-    let folderIcon: String  
+struct CreateNewFolderCardView: View {
+    var action: () -> Void
 
     var body: some View {
-        VStack {
-            Image(systemName: folderIcon)
-                .font(.system(size: 40))  
-                .foregroundColor(.accentColor)
-            Text(folderName)
-                .font(.caption)  
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) { 
+                Image(systemName: "plus.circle.fill") 
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 45, height: 45) 
+                    .foregroundColor(Color("MainColor")) 
+                    .padding([.leading, .top], 25)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("Create")
+                    .font(.system(size: 16, weight: .semibold)) 
+                    .foregroundColor(Color("MainColor")) 
+                    .lineLimit(1)
+                    .padding(.horizontal, 25)
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(width: 170, height: 210)
+            .background(
+                Image("folder_background")
+                    .resizable()
+                    .scaledToFill() 
+                    .clipped()      
+            )
+            .cornerRadius(25)
+            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
         }
-        .padding()
-        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 100)  
-        .background(.thinMaterial)  
-        .cornerRadius(10)  
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct FolderView: View {
+    let folderName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) { 
+            Image("fileicon") 
+                .resizable()
+                .scaledToFit()
+                .frame(width: 45, height: 45) 
+                .padding([.leading, .top], 25)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text(folderName)
+                .font(.system(size: 16, weight: .semibold)) 
+                .foregroundColor(Color("MainColor")) 
+                .lineLimit(2)
+                .padding(.horizontal, 25)
+                .padding(.bottom, 40)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(width: 170, height: 210)
+        .background(
+            Image("folder_background")
+                .resizable()
+                .scaledToFill() 
+                .clipped()      
+        )
+        .cornerRadius(25)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -156,24 +193,8 @@ struct FolderListView_Previews: PreviewProvider {
     static var previews: some View {
          
         let mockAPIManager = APIManager()
-         
-         
-        
-         
+
         let mockViewModel = FolderListViewModel(apiManager: mockAPIManager)
-         
-         
-         
-         
-         
-
-         
-         
-         
-
-         
-         
-         
 
         return FolderListView(apiManager: mockAPIManager)
              
