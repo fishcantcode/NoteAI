@@ -340,8 +340,9 @@ struct FolderDetailView: View {
                 if summaryDocument.difyConversationId != nil || ConfigManager.shared.isDifyChatConfigured {  
                     NavigationLink(destination: ConversationDashboardView(viewModel: viewModel, summaryDocument: summaryDocument)) {
                         Image(systemName: "message.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("MainColor"))
                             .padding(.leading, 5)
+
                     }
                     .buttonStyle(PlainButtonStyle())  
                 }

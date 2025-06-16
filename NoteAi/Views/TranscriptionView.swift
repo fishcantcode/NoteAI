@@ -89,7 +89,7 @@ struct TranscriptionView: View {
             viewModel.prepareForEditing()
             isEditingText = true
         }) {
-            Image(systemName: "pencil")
+            Image(systemName: "pencil").foregroundColor(Color("MainColor"))
         }
             .disabled(viewModel.isRecording || viewModel.transcriptionText.isEmpty))
         .onDisappear {
@@ -201,7 +201,7 @@ struct TranscriptionView: View {
                             viewModel.saveSummaryToFile()
                         }) {
                             HStack {
-                                Image(systemName: "doc.text.fill")
+                                Image(systemName: "doc.text.fill").foregroundColor(Color("MainColor"))
                                 Text("Save Summary")
                             }
                             .padding()
@@ -217,7 +217,7 @@ struct TranscriptionView: View {
                             viewModel.summarizeWithDify()
                         }) {
                             HStack {
-                                Image(systemName: "arrow.clockwise")
+                                Image(systemName: "arrow.clockwise").foregroundColor(Color("MainColor"))
                                 Text("Regenerate")
                             }
                             .padding()
@@ -283,9 +283,9 @@ struct TranscriptionView: View {
             }) {
                 VStack {
                     Image(systemName: "mic.circle.fill")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.blue)
+                        .font(.system(size: 120))
+                        .foregroundColor(Color("MainColor"))
+                        .frame(width: 150, height: 150)
                     
                     if !viewModel.transcriptionText.isEmpty {
                         Text("Tap to continue")
@@ -308,7 +308,7 @@ struct TranscriptionView: View {
                     viewModel.prepareForEditing() 
                     isEditingText = true
                 }) {
-                    Label("Edit", systemImage: "pencil")
+                    Label("Edit", systemImage: "pencil").foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -317,7 +317,7 @@ struct TranscriptionView: View {
                     UIPasteboard.general.string = viewModel.transcriptionText
                     showCopiedToast = true
                 }) {
-                    Label("Copy", systemImage: "doc.on.doc")
+                    Label("Copy", systemImage: "doc.on.doc").foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -403,7 +403,7 @@ struct TranscriptionView: View {
                 
                 Text(String(format: "%d:%02d", Int(viewModel.recordingTime) / 60, Int(viewModel.recordingTime) % 60))
                     .font(.title2.monospacedDigit())
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color("MainColor"))
                 
                 HStack {
                     Button(action: {

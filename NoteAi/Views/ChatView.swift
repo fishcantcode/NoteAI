@@ -54,7 +54,7 @@ struct ChatView: View {
                         VStack {
                             Image(systemName: "bubble.left")
                                 .font(.system(size: 40))
-                                .foregroundColor(.gray)
+                                .foregroundColor(Color("MainColor"))
                                 .padding()
                             Text("No Messages")
                                 .font(.headline)
@@ -119,7 +119,7 @@ struct ChatView: View {
                         Button(action: { viewModel.stopRecording() }) {
                             Image(systemName: "stop.circle.fill")
                                 .font(.system(size: 30))
-                                .foregroundColor(.orange)
+                                .foregroundColor(Color("MainColor"))
                         }
                         .disabled(viewModel.isProcessing)
 
@@ -133,7 +133,7 @@ struct ChatView: View {
                         Button(action: { viewModel.startRecording() }) {
                             Image(systemName: "mic.circle.fill")
                                 .font(.system(size: 30))
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color("MainColor"))
                         }
                         .disabled(viewModel.isProcessing) 
                     }
@@ -146,9 +146,9 @@ struct ChatView: View {
                     
                     if !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !viewModel.isRecording {
                         Button(action: sendMessage) {
-                            Image(systemName: "arrow.up.circle.fill")
+                            Image(systemName: "paperplane.fill")
                                 .font(.system(size: 30))
-                                .foregroundColor(viewModel.isLoading ? .gray : .blue)
+                                .foregroundColor(Color("MainColor"))
                         }
                         .disabled(viewModel.isLoading)
                     }
@@ -194,7 +194,7 @@ struct MessageRow: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             Text(message.query)
                                 .padding(12)
-                                .background(Color.blue)
+                                .background(Color("MainColor"))
                                 .foregroundColor(.white)
                                 .cornerRadius(16)
                             Text(message.formattedDate)
@@ -266,7 +266,7 @@ struct MessageRow: View {
                         if let source = resource.source {
                             Text(source)
                                 .font(.caption2)
-                                .foregroundColor(.blue)
+                                .foregroundColor(Color("MainColor"))
                         }
                     }
                     .padding(8)

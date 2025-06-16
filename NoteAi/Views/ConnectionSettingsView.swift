@@ -41,6 +41,7 @@ struct ConnectionSettingsView: View {
                          
                         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
+                    .foregroundColor(Color("MainColor"))
                 }
 
                 Section(header: Text("Connection Status")) {
@@ -58,6 +59,7 @@ struct ConnectionSettingsView: View {
                     Button("Refresh Connection Status") {
                         apiManager.checkOverallConnectionStatus()
                     }
+                    .foregroundColor(Color("MainColor"))
                 }
             }
             .navigationTitle("API Settings")
@@ -66,11 +68,11 @@ struct ConnectionSettingsView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundColor(Color("MainColor"))
                 }
             }
         }
         .onAppear {
-             
             editableBaseURL = ConfigManager.shared.difyBaseURL
             editableChatAPIKey = ConfigManager.shared.difyChatAPIKey
             editableKnowledgeAPIKey = ConfigManager.shared.difyKnowledgeID
